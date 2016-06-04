@@ -49,7 +49,7 @@ import junit.framework.TestCase;
  * @author Inderjeet Singh
  * @author Joel Leitch
  */
-public class CollectionTest extends TestCase {
+public class IterableTest extends TestCase {
   private Gson gson;
 
   @Override
@@ -65,10 +65,27 @@ public class CollectionTest extends TestCase {
     assertEquals("[1,2,3,4,5,6,7,8,9]", json);
   }
 
+  public void testTopLevelIterableOfIntegersSerialization() {
+    Iterable<Integer> target = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    Type targetType = new TypeToken<Iterable<Integer>>() {
+    }.getType();
+    String json = gson.toJson(target, targetType);
+    assertEquals("[1,2,3,4,5,6,7,8,9]", json);
+  }
+
   public void testTopLevelCollectionOfIntegersDeserialization() {
     String json = "[0,1,2,3,4,5,6,7,8,9]";
     Type collectionType = new TypeToken<Collection<Integer>>() { }.getType();
     Collection<Integer> target = gson.fromJson(json, collectionType);
+    int[] expected = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    MoreAsserts.assertEquals(expected, toIntArray(target));
+  }
+
+  public void testTopLevelIterableOfIntegersDeserialization() {
+    String json = "[0,1,2,3,4,5,6,7,8,9]";
+    Type collectionType = new TypeToken<Iterable<Integer>>() {
+    }.getType();
+    Iterable<Integer> target = gson.fromJson(json, collectionType);
     int[] expected = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     MoreAsserts.assertEquals(expected, toIntArray(target));
   }
@@ -87,6 +104,24 @@ public class CollectionTest extends TestCase {
 
     for (int i = 0; i < 3; i++) {
       MoreAsserts.assertEquals(expected[i], toIntArray(target.get(i)));
+    }
+  }
+
+  public void testTopLevelIterableOfIntegerIterableDeserialization() throws Exception {
+    String json = "[[1,2,3],[4,5,6],[7,8,9]]";
+    Type collectionType = new TypeToken<Iterable<Iterable<Integer>>>() {
+    }.getType();
+    Iterable<Iterable<Integer>> target = gson.fromJson(json, collectionType);
+    int[][] expected = new int[3][3];
+    for (int i = 0; i < 3; ++i) {
+      int start = (3 * i) + 1;
+      for (int j = 0; j < 3; ++j) {
+        expected[i][j] = start + j;
+      }
+    }
+
+    for (int i = 0; i < 3; i++) {
+      MoreAsserts.assertEquals(expected[i], toIntArray(getElementAt(target, i)));
     }
   }
 
@@ -343,19 +378,31 @@ public class CollectionTest extends TestCase {
     ArrayList<Long> longs = new ArrayList<Long>();
   }
 
-  @SuppressWarnings("rawtypes")
-  private static int[] toIntArray(Collection collection) {
-    int[] ints = new int[collection.size()];
-    int i = 0;
-    for (Iterator iterator = collection.iterator(); iterator.hasNext(); ++i) {
-      Object obj = iterator.next();
+  private static int[] toIntArray(Iterable<?> iterable) {
+    List<Integer> integers = new ArrayList<Integer>();
+    for (Object obj : iterable) {
       if (obj instanceof Integer) {
-        ints[i] = ((Integer)obj).intValue();
+        integers.add((Integer) obj);
       } else if (obj instanceof Long) {
-        ints[i] = ((Long)obj).intValue();
+        integers.add(((Long) obj).intValue());
       }
     }
+    int[] ints = new int[integers.size()];
+    for (int i = 0; i < integers.size(); i++) {
+      ints[i] = integers.get(i);
+    }
     return ints;
+  }
+
+  private static <T> T getElementAt(Iterable<T> iterable, int index) {
+    Iterator<T> iterator = iterable.iterator();
+    for (int i = 0; iterator.hasNext(); i++) {
+      T next = iterator.next();
+      if (i == index) {
+        return next;
+      }
+    }
+    throw new IndexOutOfBoundsException("index: " + index);
   }
 
   private static class ObjectWithWildcardCollection {

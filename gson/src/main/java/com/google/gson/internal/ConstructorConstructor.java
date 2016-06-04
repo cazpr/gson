@@ -175,6 +175,15 @@ public final class ConstructorConstructor {
       }
     }
 
+    if (Iterable.class.isAssignableFrom(rawType)) {
+      return new ObjectConstructor<T>() {
+        @Override
+        public T construct() {
+          return (T) new ArrayList<Object>();
+        }
+      };
+    }
+
     if (Map.class.isAssignableFrom(rawType)) {
       if (ConcurrentNavigableMap.class.isAssignableFrom(rawType)) {
         return new ObjectConstructor<T>() {

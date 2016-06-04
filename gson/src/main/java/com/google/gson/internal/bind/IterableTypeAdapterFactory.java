@@ -31,12 +31,12 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 
 /**
- * Adapt a homogeneous collection of objects.
+ * Adapt a homogeneous iterable of objects.
  */
-public final class CollectionTypeAdapterFactory implements TypeAdapterFactory {
+public final class IterableTypeAdapterFactory implements TypeAdapterFactory {
   private final ConstructorConstructor constructorConstructor;
 
-  public CollectionTypeAdapterFactory(ConstructorConstructor constructorConstructor) {
+  public IterableTypeAdapterFactory(ConstructorConstructor constructorConstructor) {
     this.constructorConstructor = constructorConstructor;
   }
 
@@ -45,11 +45,11 @@ public final class CollectionTypeAdapterFactory implements TypeAdapterFactory {
     Type type = typeToken.getType();
 
     Class<? super T> rawType = typeToken.getRawType();
-    if (!Collection.class.isAssignableFrom(rawType)) {
+    if (!Iterable.class.isAssignableFrom(rawType)) {
       return null;
     }
 
-    Type elementType = $Gson$Types.getCollectionElementType(type, rawType);
+    Type elementType = $Gson$Types.getIterableElementType(type, rawType);
     TypeAdapter<?> elementTypeAdapter = gson.getAdapter(TypeToken.get(elementType));
     ObjectConstructor<T> constructor = constructorConstructor.get(typeToken);
 
@@ -58,7 +58,7 @@ public final class CollectionTypeAdapterFactory implements TypeAdapterFactory {
     return result;
   }
 
-  private static final class Adapter<E> extends TypeAdapter<Collection<E>> {
+  private static final class Adapter<E> extends TypeAdapter<Iterable<E>> {
     private final TypeAdapter<E> elementTypeAdapter;
     private final ObjectConstructor<? extends Collection<E>> constructor;
 
@@ -70,7 +70,7 @@ public final class CollectionTypeAdapterFactory implements TypeAdapterFactory {
       this.constructor = constructor;
     }
 
-    @Override public Collection<E> read(JsonReader in) throws IOException {
+    @Override public Iterable<E> read(JsonReader in) throws IOException {
       if (in.peek() == JsonToken.NULL) {
         in.nextNull();
         return null;
@@ -86,7 +86,7 @@ public final class CollectionTypeAdapterFactory implements TypeAdapterFactory {
       return collection;
     }
 
-    @Override public void write(JsonWriter out, Collection<E> collection) throws IOException {
+    @Override public void write(JsonWriter out, Iterable<E> collection) throws IOException {
       if (collection == null) {
         out.nullValue();
         return;
